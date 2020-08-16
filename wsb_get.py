@@ -12,6 +12,8 @@ client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
 username = "tall_george_",password = "Brewer5!",
 user_agent =  "Get_Stonks by /u/tall_george_")
 
+# make sure we're in read-only mode
+reddit.read_only = True
 
 def get_date(submission):
 	time = submission.created
@@ -60,9 +62,8 @@ items_dict = { "flair":[],
                 "created": [],
                 "body":[]}
 
-
 # pull the data
-for submission in wsb.top(limit=500):
+for submission in wsb.new(limit=None):
     items_dict["flair"].append(submission.link_flair_text)
     items_dict["title"].append(submission.title)
     items_dict["score"].append(submission.score)
@@ -74,6 +75,18 @@ for submission in wsb.top(limit=500):
 
 # convert dict to dataframe
 items_df = pd.DataFrame(items_dict)
+
+# clean up date
+items_df['date'] = items_df["created"].apply(get_date)
+
+# filter to just include daily discussion
+dd_df = items_df[items_df['flair'] == 'DD']
+
+def get_date(created):
+    return datetime.datetime.fromtimestamp(created)
+
+
+
 
 # write out dataframe
 items_df.to_csv("inital_pull.csv", index=False)
