@@ -36,7 +36,7 @@ num_coms = []
 num_score = []
 for submission in wsb.search("daily discussion", limit=5000):
 	week_titles.append(submission.title)
-	week_text.append(submission.selftext)
+	week_text.append(submission.selftex
 	post_dates.append(get_date(submission))
 	num_coms.append(submission.num_comments)
 	num_score.append(submission.score)
@@ -60,7 +60,8 @@ items_dict = { "flair":[],
                 "id":[], "url":[],
                 "comms_num": [],
                 "created": [],
-                "body":[]}
+                "body":[],
+				"date":[]}
 
 # pull the data
 for submission in wsb.new(limit=None):
@@ -72,6 +73,7 @@ for submission in wsb.new(limit=None):
     items_dict["comms_num"].append(submission.num_comments)
     items_dict["created"].append(submission.created)
     items_dict["body"].append(submission.selftext)
+    items_dict["date"].append(submission.created_utc)
 
 # convert dict to dataframe
 items_df = pd.DataFrame(items_dict)
