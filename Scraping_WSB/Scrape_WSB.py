@@ -23,10 +23,10 @@ api = PushshiftAPI(reddit)
 
 # set range of dates to scrape
 start_day = dt.datetime(2020, 1, 1)
-date_list = [start_day + dt.timedelta(days=x) for x in range(10)]
+date_list = [start_day + dt.timedelta(days=x) for x in range(50)]
 
 # create empty list to hold submission ids
-DD_ids = list()
+all_ids = list()
 
 for day in date_list:
     # set starting day for this loop
@@ -37,24 +37,24 @@ for day in date_list:
     # get the submission ids for a given day
     results = list(api.search_submissions(after=start_epoch,
                             before=end_epoch,
-                            subreddit='wallstreetbets',
-                            #link_flair_text='DD',
-#                            filter=['url','author', 'title', 'subreddit'],
-                            limit=1000
+                            subreddit='wallstreetbets'
                             ))
 
-    # get flairs associated the results id
-    flairs = list()
-    for submission in results:
-        flairs.append(submission.link_flair_text)
-
-    # get submission ids that match DD
-    todays_ids = list(np.array(results)[np.array(flairs) == "DD"])
-
     # add ids to master list
-    DD_ids.append(todays_ids)
+    all_ids.append(results)
 
 
+# flatten list
+all_ids = [item for sublist in all_ids for item in sublist]
+
+# get flairs associated the results id
+flairs = list()
+for submission in all_ids:
+    flairs.append(submission.link_flair_text)
+
+# get submission ids that match "DD" (daily discussion)
+
+DD_ids = list(np.array(all_ids)[np.array(flairs) == "DD"])
 
 # define dict of the items we want to pull
 items_dict = { "flair":[],
@@ -86,3 +86,9 @@ def get_date(created):
 
 # clean up date
 items_df['date'] = items_df["created"].apply(get_date)
+
+# remove rows that contained removed posts
+items_df = items_df[items_df['body'] != '[removed]']
+
+# write out dataframe
+items_df.to_csv("scraped_posts.csv", index=False)
