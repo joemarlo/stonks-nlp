@@ -87,8 +87,10 @@ def get_date(created):
 # clean up date
 items_df['date'] = items_df["created"].apply(get_date)
 
-# remove rows that contained removed posts
+# remove rows that contained removed posts, deleted
 items_df = items_df[items_df['body'] != '[removed]']
+items_df = items_df[items_df['body'] != '[deleted]']
+
 
 # write out dataframe
 items_df.to_csv("scraped_posts.csv", index=False)
