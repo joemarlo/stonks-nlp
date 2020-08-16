@@ -1,10 +1,15 @@
-import praw    
-import pandas as pd	
+import praw
+import pandas as pd
 import datetime
+import os
+
+# set working directory
+os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+
 reddit = praw.Reddit(
-client_id = "V9-uqOgDp7Mx6w", 
-client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk", 
-username = "tall_george_",password = "Brewer5!", 
+client_id = "V9-uqOgDp7Mx6w",
+client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
+username = "tall_george_",password = "Brewer5!",
 user_agent =  "Get_Stonks by /u/tall_george_")
 
 
@@ -16,7 +21,7 @@ def get_date(submission):
 wsb = reddit.subreddit("wallstreetbets")
 day_titles = []
 day_text = []
-for submission in wsb.search("daily discussion",time_filter='day'): 
+for submission in wsb.search("daily discussion",time_filter='day'):
 	day_titles.append(submission.title)
 	day_text.append(submission.selftext)
 
@@ -27,7 +32,7 @@ week_comments = []
 post_dates = []
 num_coms = []
 num_score = []
-for submission in wsb.search("daily discussion", limit=5000): 
+for submission in wsb.search("daily discussion", limit=5000):
 	week_titles.append(submission.title)
 	week_text.append(submission.selftext)
 	post_dates.append(get_date(submission))
@@ -35,7 +40,7 @@ for submission in wsb.search("daily discussion", limit=5000):
 	num_score.append(submission.score)
 
 	#week_comments.append(submission.comments)
-	#week_comments[0][0].body 
+	#week_comments[0][0].body
 	# first index is comment tree of post, secound index is comment within
 """
 
@@ -48,11 +53,11 @@ wsb = reddit.subreddit("wallstreetbets")
 
 # define dict of the items we want to pull
 items_dict = { "flair":[],
-                "title":[], 
-                "score":[], 
-                "id":[], "url":[], 
-                "comms_num": [], 
-                "created": [], 
+                "title":[],
+                "score":[],
+                "id":[], "url":[],
+                "comms_num": [],
+                "created": [],
                 "body":[]}
 
 
@@ -68,9 +73,7 @@ for submission in wsb.top(limit=500):
     items_dict["body"].append(submission.selftext)
 
 # convert dict to dataframe
-items_df = pd.DataFrame(topics_dict)
+items_df = pd.DataFrame(items_dict)
 
 # write out dataframe
 items_df.to_csv("inital_pull.csv", index=False)
-
-
