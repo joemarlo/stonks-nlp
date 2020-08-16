@@ -20,39 +20,69 @@ reddit.read_only = True
 # use PRAW credentials; then PSAW returns the IDs that you can use in PRAW
 api = PushshiftAPI(reddit)
 
-#api = PushshiftAPI()
 
-start_epoch=int(dt.datetime(2020, 1, 1).timestamp())
-end_epoch=int(dt.datetime(2020, 1, 2).timestamp())
+# set range of dates to scrape
+start_day = dt.datetime(2020, 1, 1)
+date_list = [start_day + dt.timedelta(days=x) for x in range(10)]
 
-results = list(api.search_submissions(after=start_epoch,
+# create empty list to hold submission ids
+DD_ids = list()
+
+for day in date_list:
+    # set starting day for this loop
+    start_epoch=int(day.timestamp())
+    # add one day to start_epoch
+    end_epoch=start_epoch+(24*60*60)
+
+    # get the submission ids for a given day
+    results = list(api.search_submissions(after=start_epoch,
                             before=end_epoch,
                             subreddit='wallstreetbets',
-                            filter=['url','author', 'title', 'subreddit'],
-                            limit=100
+                            #link_flair_text='DD',
+#                            filter=['url','author', 'title', 'subreddit'],
+                            limit=1000
                             ))
 
-# search using praw based on the ids obtained via psaw
-reddit.submission(id='eiota0d').title
+    # get flairs associated the results id
+    flairs = list()
+    for submission in results:
+        flairs.append(submission.link_flair_text)
 
-flairs = list()
-for submission in results:
-    flairs.append(submission.link_flair_text)
+    # get submission ids that match DD
+    todays_ids = list(np.array(results)[np.array(flairs) == "DD"])
 
-flairs = np.array(flairs)
-results[np.where(flairs == "DD")[0]]
-
-np.where(flairs == "DD")[0]
-
-def get_DD_submissions(flairs):
-    if flairs == 'DD':
-        submission[i]
-        print(submission)
-
-for i in flairs:
+    # add ids to master list
+    DD_ids.append(todays_ids)
 
 
-url = 'http://www.politico.com/story/2017/02/mike-flynn-russia-ties-investigation-235272'
-url_results = list(api.search_submissions(url=url, limit=500))
 
-len(url_results), any(r.url == url for r in url_results)
+# define dict of the items we want to pull
+items_dict = { "flair":[],
+                "title":[],
+                "score":[],
+                "id":[], "url":[],
+                "comms_num": [],
+                "created": [],
+                "body":[],
+				"date":[]}
+
+# pull the data
+for submission in DD_ids:
+    items_dict["flair"].append(submission.link_flair_text)
+    items_dict["title"].append(submission.title)
+    items_dict["score"].append(submission.score)
+    items_dict["id"].append(submission.id)
+    items_dict["url"].append(submission.url)
+    items_dict["comms_num"].append(submission.num_comments)
+    items_dict["created"].append(submission.created)
+    items_dict["body"].append(submission.selftext)
+    items_dict["date"].append(submission.created_utc)
+
+# convert dict to dataframe
+items_df = pd.DataFrame(items_dict)
+
+def get_date(created):
+    return dt.datetime.fromtimestamp(created)
+
+# clean up date
+items_df['date'] = items_df["created"].apply(get_date)
