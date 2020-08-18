@@ -6,7 +6,8 @@ import os
 import numpy as np
 
 # set working directory
-os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+#os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+os.chdir("/Users/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 
 reddit = praw.Reddit(
 client_id = "V9-uqOgDp7Mx6w",

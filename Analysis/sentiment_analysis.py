@@ -8,7 +8,9 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 #import tidytext
 
 # set working directory
-os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+#os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+os.chdir("/Users/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+
 
 # read in the scraped posts
 posts_df = pd.read_csv("Scraping_WSB/scraped_posts.csv")
