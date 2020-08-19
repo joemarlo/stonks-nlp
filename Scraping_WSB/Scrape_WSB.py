@@ -6,8 +6,8 @@ import os
 import numpy as np
 
 # set working directory
-#os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
-os.chdir("/Users/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+#os.chdir("/Users/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 
 reddit = praw.Reddit(
 client_id = "V9-uqOgDp7Mx6w",
@@ -23,7 +23,7 @@ api = PushshiftAPI(reddit)
 
 # set range of dates to scrape
 start_day = dt.datetime(2020, 1, 1)
-date_list = [start_day + dt.timedelta(days=x) for x in range(50)]
+date_list = [start_day + dt.timedelta(days=x) for x in range(100)]
 
 # create empty list to hold submission ids
 all_ids = list()
@@ -61,10 +61,10 @@ items_dict = { "flair":[],
                 "title":[],
                 "score":[],
                 "id":[], "url":[],
-                "comms_num": [],
-                "created": [],
+                "comms_num":[],
+                "created":[],
                 "body":[],
-				"date":[]}
+                "date":[]}
 
 # pull the data
 for submission in DD_ids:

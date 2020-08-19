@@ -8,6 +8,7 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import tidytext
 import matplotlib.pyplot as plt
 import seaborn as sns
+import praw
 
 # set working directory
 os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
@@ -17,7 +18,7 @@ os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 posts_df = pd.read_csv("Scraping_WSB/scraped_posts.csv")
 
 # remove NaNs
-posts_df = posts_df.dropna(subset=['title', 'body'])
+posts_df = posts_df.dropna(subset=['title', 'body']).reset_index()
 
 # remove words
 #vader.lexicon.pop('no')
@@ -102,3 +103,36 @@ posts_df[["body_score"]] = compound_scores
 
 # run the analyer on the post title and add to dataframe
 posts_df[["title_score"]] = [vader.polarity_scores(title)["compound"] for title in posts_df.title]
+
+# set up our Reddit credentials
+reddit = praw.Reddit(
+client_id = "V9-uqOgDp7Mx6w",
+client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
+username = "tall_george_",password = "Brewer5!",
+user_agent =  "Get_Stonks by /u/tall_george_")
+
+# make sure we're in read-only mode
+reddit.read_only = True
+
+# get the mean sentiment score for all of the top-level comments per post
+post_mean_scores = []
+for i in range(len(posts_df.id)):
+    submission = reddit.submission(id=posts_df.id[i])
+    submission.comments.replace_more(limit=0)
+    comment_scores = []
+    for top_level_comment in submission.comments:
+        comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
+    if len(comment_scores) > 0:
+        post_mean_scores.append(np.mean(comment_scores))
+    else:
+        post_mean_scores.append(np.nan)
+
+# histogram of scores
+sns.distplot(post_mean_scores)
+plt.show()
+
+# add scores to dataframe
+posts_df[["mean_top_level_comment_score"]] = post_mean_scores
+
+# write out dataframe
+#posts_df.to_csv("scored_posts.csv", index=False)
