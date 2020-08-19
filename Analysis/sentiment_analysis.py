@@ -9,7 +9,6 @@ import tidytext
 import matplotlib.pyplot as plt
 import seaborn as sns
 import praw
-plt.figure(figsize=(9, 5))
 
 # set working directory
 os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
@@ -96,6 +95,7 @@ for score in range(0, len(scores)):
     compound_scores.append(scores[score]["compound"])
 
 # histogram of scores
+plt.figure(figsize=(9, 5))
 sns.distplot(compound_scores).set_title('Distribution of sentiment scores of r/WallStreetBets posts')
 plt.show()
 
@@ -106,15 +106,12 @@ posts_df[["body_score"]] = compound_scores
 posts_df[["title_score"]] = [vader.polarity_scores(title)["compound"] for title in posts_df.title]
 
 # histogram of scores
+plt.figure(figsize=(9, 5))
 sns.distplot(posts_df.title_score).set_title('Distribution of sentiment scores of r/WallStreetBets post titles')
 plt.show()
 
-# set up our Reddit credentials
-reddit = praw.Reddit(
-client_id = "V9-uqOgDp7Mx6w",
-client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
-username = "tall_george_",password = "Brewer5!",
-user_agent =  "Get_Stonks by /u/tall_george_")
+# insert Reddit credentials here
+reddit = praw.Reddit(...)
 
 # make sure we're in read-only mode
 reddit.read_only = True
@@ -133,7 +130,8 @@ for i in range(len(posts_df.id)):
         post_mean_scores.append(np.nan)
 
 # histogram of scores
-sns.distplot(post_mean_scores).set_title('Distribution of sentiment scores of r/WallStreetBets comments')
+plt.figure(figsize=(9, 5))
+sns.distplot(post_mean_scores).set_title('Distribution of sentiment scores of r/WallStreetBets comments (mean per post)')
 plt.show()
 
 # add scores to dataframe

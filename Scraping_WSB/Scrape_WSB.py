@@ -9,11 +9,8 @@ import numpy as np
 os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 #os.chdir("/Users/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 
-reddit = praw.Reddit(
-client_id = "V9-uqOgDp7Mx6w",
-client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
-username = "tall_george_",password = "Brewer5!",
-user_agent =  "Get_Stonks by /u/tall_george_")
+# insert Reddit credentials here
+reddit = praw.Reddit(...)
 
 # make sure we're in read-only mode
 reddit.read_only = True
@@ -23,7 +20,7 @@ api = PushshiftAPI(reddit)
 
 # set range of dates to scrape
 start_day = dt.datetime(2020, 1, 1)
-date_list = [start_day + dt.timedelta(days=x) for x in range(100)]
+date_list = [start_day + dt.timedelta(days=x) for x in range(10)]
 
 # create empty list to hold submission ids
 all_ids = list()
