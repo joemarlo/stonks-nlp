@@ -24,5 +24,5 @@ for (i in 1:26) {
 }
 
 tickers <- bind_rows(tickers)
-write_csv(tickers, "tickers.csv")
+write_csv(tickers, "Data/tickers.csv")
 
