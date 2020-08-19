@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 # set working directory
-#os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
-os.chdir("/Users/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
+#os.chdir("/Users/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 
 # read in the scraped posts
 posts_df = pd.read_csv("Scraping_WSB/scraped_posts.csv")
@@ -85,7 +85,7 @@ vader.lexicon.update(positive_dict)
 vader.lexicon.update(negative_dict)
 vader.lexicon.update(neutral_dict)
 
-# run the analyzer
+# run the analyzer on the original post body
 scores = [vader.polarity_scores(body) for body in posts_df.body]
 
 # pull out the compound scores
@@ -98,4 +98,7 @@ sns.distplot(compound_scores)
 plt.show()
 
 # add to dataframe
-posts_df[["compound_score"]] = compound_scores
+posts_df[["body_score"]] = compound_scores
+
+# run the analyer on the post title and add to dataframe
+posts_df[["title_score"]] = [vader.polarity_scores(title)["compound"] for title in posts_df.title]
