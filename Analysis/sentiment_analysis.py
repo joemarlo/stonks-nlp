@@ -6,6 +6,8 @@ import nltk
 from nltk.corpus import stopwords
 from nltk.sentiment.vader import SentimentIntensityAnalyzer
 import tidytext
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 # set working directory
 #os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
@@ -52,7 +54,9 @@ WSB_lingo = {
 "mars": 100,
 "musk": 10,
 "elon": 10,
-"gay bears": -50
+"gay bears": -50,
+"put": -100,
+"puts": -100
 }
 
 # add custom words
@@ -83,3 +87,15 @@ vader.lexicon.update(neutral_dict)
 
 # run the analyzer
 scores = [vader.polarity_scores(body) for body in posts_df.body]
+
+# pull out the compound scores
+compound_scores = []
+for score in range(0, len(scores)):
+    compound_scores.append(scores[score]["compound"])
+
+# histogram of scores
+sns.distplot(compound_scores)
+plt.show()
+
+# add to dataframe
+posts_df[["compound_score"]] = compound_scores
