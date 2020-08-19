@@ -1,0 +1,4 @@
+Data/*.csv
+Data/Robinhood_usage/*.csv
+.DS_Store
+.DS_store
