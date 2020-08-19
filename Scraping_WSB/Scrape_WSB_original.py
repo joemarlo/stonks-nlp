@@ -6,11 +6,8 @@ import os
 # set working directory
 os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 
-reddit = praw.Reddit(
-client_id = "V9-uqOgDp7Mx6w",
-client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
-username = "tall_george_",password = "Brewer5!",
-user_agent =  "Get_Stonks by /u/tall_george_")
+# insert Reddit credentials
+reddit = praw.Reddit(...)
 
 # make sure we're in read-only mode
 reddit.read_only = True
