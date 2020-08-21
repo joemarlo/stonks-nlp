@@ -43,6 +43,7 @@ vader = SentimentIntensityAnalyzer()
 # add custom words words
 WSB_lingo = {
 "tendies": 100,
+"weaklies": -100,
 "bear": -100,
 "bull": 100,
 "buy": 100,
@@ -51,13 +52,17 @@ WSB_lingo = {
 "retard": 0,
 "retards": 0,
 "autistic": 10,
+"autist": 50,
 "moon": 100,
 "mars": 100,
 "musk": 10,
 "elon": 10,
 "gay bears": -50,
 "put": -100,
-"puts": -100
+"puts": -100,
+"degen": 0,
+"YOLO": 100,
+
 }
 
 # add custom words

@@ -23,6 +23,7 @@ tickers_df.name = tickers_df.name.str.lower()
 tokens = [word_tokenize(body) for body in posts_df.body]
 
 # need to parse out LLC etc. ..
+# need to remove $ as sometimes those are before a ticker
 
 # check to see if word is in the ticker list
 ticker_boolean = []
