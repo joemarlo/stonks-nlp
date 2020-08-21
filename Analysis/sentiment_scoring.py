@@ -51,8 +51,9 @@ WSB_lingo = {
 "falls": -100,
 "retard": 0,
 "retards": 0,
-"autistic": 10,
+"autistic": 50,
 "autist": 50,
+"autism": 50,
 "moon": 100,
 "mars": 100,
 "musk": 10,
@@ -62,7 +63,9 @@ WSB_lingo = {
 "puts": -100,
 "degen": 0,
 "YOLO": 100,
-
+"moon": 50,
+"drill": -50,
+"printer": 50
 }
 
 # add custom words
@@ -122,6 +125,7 @@ reddit = praw.Reddit(...)
 reddit.read_only = True
 
 # get the mean sentiment score for all of the top-level comments per post
+# TODO weight this by upvotes ??
 post_mean_scores = []
 for i in range(len(posts_df.id)):
     submission = reddit.submission(id=posts_df.id[i])

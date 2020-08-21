@@ -22,9 +22,47 @@ tickers_df.name = tickers_df.name.str.lower()
 # first tokenize the words
 tokens = [word_tokenize(body) for body in posts_df.body]
 
-# need to parse out LLC etc. ..
+# need to parse out LLC etc; first figure out which are most frequent
+# tokenize and count most frequent tokens in company names
+names_tokens = [word_tokenize(name) for name in tickers_df.name]
+flat_names_tokens = [item for sublist in names_tokens for item in sublist]
+pd.Series(flat_names_tokens).value_counts()[0:50]
+del flat_names_tokens
+
+words_to_remove = [
+'corp',
+'inc',
+'.',
+'ltd',
+'holdings',
+'group',
+'co',
+'trust',
+'financial',
+'lp',
+'plc',
+'international',
+'pharmaceuticals',
+'partners',
+'technologies',
+'bancorp',
+'capital',
+'therapeutics',
+'the',
+'energy',
+'tech'
+]
+
+# remove the words
+clean_names = []
+for sentence in names_tokens:
+    clean_tokens = [word for word in sentence if word not in words_to_remove]
+    clean_names.append(' '.join(clean_tokens))
+
 # need to remove $ as sometimes those are before a ticker
 
+# TODO: issue is that some companies are multiple words_to_remove
+# need some sort of ngram approach
 # check to see if word is in the ticker list
 ticker_boolean = []
 for sentence in tokens:
