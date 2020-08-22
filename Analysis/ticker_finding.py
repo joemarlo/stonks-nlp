@@ -23,6 +23,11 @@ tickers_df = pd.read_csv("Data/tickers.csv")
 tickers_df.ticker = tickers_df.ticker.str.lower()
 tickers_df.name = tickers_df.name.str.lower()
 
+# filter tickers_df to just the top ones
+top_tickers = pd.read_csv("Data/ticker_names.csv")
+top_tickers.ticker = top_tickers.ticker.str.lower()
+tickers_df = pd.merge(tickers_df, top_tickers, on='ticker')
+
 # first pull out all strings that start with $
 found_dollars = []
 for post in posts_df.body:
@@ -33,14 +38,15 @@ for post in posts_df.body:
         clean_ticker = ticker.replace("$", "")
         if clean_ticker in list(tickers_df.ticker):
             matches.append(clean_ticker)
-    found_dollars.append(matches)
+    #found_dollars.append(matches)
+    found_dollars.append(', '.join(set(matches)))
 
-# convert to list
+# add list to main dataframe
 posts_df["dollar_tickers"] = found_dollars
 del found_dollars, matches, captured_text, clean_ticker
 
 # now we need to search for tickers and company names without dollar signs
-# first tokenize the words (this seperates out the $)
+# first tokenize the words (fyi this seperates out the $)
 tokens = [word_tokenize(body) for body in posts_df.body]
 
 # remove stopwords and puncation
@@ -94,31 +100,60 @@ for sentence in names_tokens:
 
 # run the leven distance and return the top match but only if that top match
     # has a score greater than 95
-# this takes a while to run (30min+)
+# this takes a while to run (10min)
 matches = []
-for sentence in clean_tokens:
-    sentence_matches = []
-    for word in sentence:
+for post in clean_tokens:
+    post_matches = []
+    for word in post:
         best_match = process.extractOne(word, clean_names)
         if best_match[1] > 95:
-            sentence_matches.append(best_match[0])
-    matches.append(sentence_matches)
+            post_matches.append(best_match[0])
+    matches.append(post_matches)
+del sentence, post_matches, word, best_match
 
+# match the extraction to the ticker
+ticker_matches = []
+for match in matches:
+    post_tickers = []
+    for word in match:
+        index = np.argwhere(np.array(clean_names) == word)[0]
+        post_tickers.append(tickers_df.ticker[int(index)])
+    ticker_matches.append(', '.join(set(post_tickers)))
+
+# add list to main dataframe
+posts_df["found_names"] = ticker_matches
 
 # find all the matching tickers per post
 # TODO remove tickers that are english words
+# we need to retain the case here b/c they often put the ticker in uppercase
+    # otherwise there are many incorrect matches
+reg_case_posts_df = pd.read_csv("Analysis/scored_posts.csv")
+reg_case_tokens = [word_tokenize(body) for body in reg_case_posts_df.body]
+reg_case_clean_tokens = []
+for post in reg_case_tokens:
+    filtered_post = []
+    for w in post:
+        if w not in stop_words and w.isalpha():
+            filtered_post.append(w)
+    reg_case_clean_tokens.append(filtered_post)
+
 found_tickers = []
-for post in tokens:
+for post in reg_case_clean_tokens:
     post_tickers = []
     for word in post:
-        is_ticker = word.lower() in list(tickers_df.ticker)
+        is_ticker = word in list(tickers_df.ticker.str.upper())
         if is_ticker:
             post_tickers.append(word)
-    found_tickers.append(post_tickers)
+    found_tickers.append(', '.join(set(post_tickers)))
 
+del reg_case_posts_df
 
+# add to main dataframe
+posts_df["found_tickers"] = found_tickers
 
-name_boolean = []
-for post in tokens:
-    for word in post:
-        name_boolean.append(word.lower() in list(tickers_df.name))
+# add new columns with all found companies
+posts_df["all_found_companies"] = posts_df.dollar_tickers + ", " + posts_df.found_names + ", " + posts_df.found_tickers
+posts_df['all_found_companies'] = posts_df['all_found_companies'].apply(lambda x: re.sub(", ", " ", x).strip().upper())
+
+# write out dataframe
+posts_df[["url", "comms_num", "date", "sentiment_score", "all_found_companies"]].to_csv("Analysis/scored_named_posts.csv", index=False)

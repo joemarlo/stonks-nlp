@@ -119,32 +119,48 @@ sns.distplot(posts_df.title_score).set_title('Distribution of sentiment scores o
 plt.show()
 
 # insert Reddit credentials here
-reddit = praw.Reddit(...)
+#reddit = praw.Reddit(...)
+reddit = praw.Reddit(
+client_id = "V9-uqOgDp7Mx6w",
+client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
+username = "tall_george_",password = "Brewer5!",
+user_agent =  "Get_Stonks by /u/tall_george_")
 
 # make sure we're in read-only mode
 reddit.read_only = True
 
 # get the mean sentiment score for all of the top-level comments per post
-# TODO weight this by upvotes ??
-post_mean_scores = []
+# TODO weight this by upvotes -> wieght within each post by their points
+post_scores = []
 for i in range(len(posts_df.id)):
     submission = reddit.submission(id=posts_df.id[i])
     submission.comments.replace_more(limit=0)
     comment_scores = []
+    comment_upvotes = []
     for top_level_comment in submission.comments:
         comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
+        comment_upvotes.append(top_level_comment.score)
     if len(comment_scores) > 0:
-        post_mean_scores.append(np.mean(comment_scores))
+        weighted_score = (np.array(comment_scores) * np.array(comment_upvotes)).sum() / np.array(comment_upvotes).sum()
+        post_scores.append(weighted_score)
     else:
-        post_mean_scores.append(np.nan)
+        post_scores.append(np.nan)
 
 # histogram of scores
 plt.figure(figsize=(9, 5))
-sns.distplot(post_mean_scores).set_title('Distribution of sentiment scores of r/WallStreetBets comments (mean per post)')
+sns.distplot(post_scores).set_title('Distribution of sentiment scores of r/WallStreetBets comments (weighted by comment points per post)')
 plt.show()
 
 # add scores to dataframe
-posts_df[["mean_top_level_comment_score"]] = post_mean_scores
+posts_df[["comment_score"]] = post_scores
+
+# create one score out of the three
+posts_df["sentiment_score"] = posts_df[["body_score", "title_score", "comment_score"]].mean(axis='columns')
+
+# histogram of scores
+plt.figure(figsize=(9, 5))
+sns.distplot(posts_df["sentiment_score"]).set_title('Distribution of sentiment scores of r/WallStreetBets (mean of title, body, and comments scores)')
+plt.show()
 
 # write out dataframe
 posts_df.to_csv("Analysis/scored_posts.csv", index=False)

@@ -5,6 +5,10 @@
 ## Sentiment scores
 
 <p align="center">
+<img src="Plots/sentiment_dist.png" width=79%>
+</p>
+
+<p align="center">
 <img src="Plots/sentiment_dist_body.png" width=79%>
 </p>
 
