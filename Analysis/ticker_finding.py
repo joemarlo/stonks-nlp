@@ -1,6 +1,7 @@
 import pandas as pd
 import datetime as dt
 import os
+import re
 import numpy as np
 #import tidytext
 from nltk.tokenize import word_tokenize
@@ -17,7 +18,29 @@ os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
 posts_df = pd.read_csv("Analysis/scored_posts.csv")
 posts_df.body = posts_df.body.str.lower()
 
-# first tokenize the words
+# read in the tickers df and make lower case
+tickers_df = pd.read_csv("Data/tickers.csv")
+tickers_df.ticker = tickers_df.ticker.str.lower()
+tickers_df.name = tickers_df.name.str.lower()
+
+# first pull out all strings that start with $
+found_dollars = []
+for post in posts_df.body:
+    captured_text = list(set(re.compile('(\$[a-z]+)').findall(post)))
+    # make sure text in is ticker list
+    matches = []
+    for ticker in captured_text:
+        clean_ticker = ticker.replace("$", "")
+        if clean_ticker in list(tickers_df.ticker):
+            matches.append(clean_ticker)
+    found_dollars.append(matches)
+
+# convert to list
+posts_df["dollar_tickers"] = found_dollars
+del found_dollars, matches, captured_text, clean_ticker
+
+# now we need to search for tickers and company names without dollar signs
+# first tokenize the words (this seperates out the $)
 tokens = [word_tokenize(body) for body in posts_df.body]
 
 # remove stopwords and puncation
@@ -31,11 +54,6 @@ for sentence in tokens:
         if w not in stop_words and w.isalpha():
             filtered_sentence.append(w)
     clean_tokens.append(filtered_sentence)
-
-# read in the tickers df and make lower case
-tickers_df = pd.read_csv("Data/tickers.csv")
-tickers_df.ticker = tickers_df.ticker.str.lower()
-tickers_df.name = tickers_df.name.str.lower()
 
 # need to parse out LLC etc; first figure out which are most frequent
 # tokenize and count most frequent tokens in company names
