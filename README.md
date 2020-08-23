@@ -24,3 +24,7 @@ Examining the link between [r/wallstreetbets](https://www.reddit.com/r/wallstree
 <p align="center">
   <img src="Plots/RH_usage.png" width=79%>
 </p>
+
+<p align="center">
+  <img src="Plots/RH_usage_top_tickers.png" width=79%>
+</p>

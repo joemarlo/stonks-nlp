@@ -147,21 +147,28 @@ ggsave("Plots/RH_usage.png",
        units = 'cm')
 
 # RH usage over time by ticker
-RH_usage %>% 
+tmp <- RH_usage %>% 
   group_by(ticker) %>% 
   summarize(mean_user = mean(users_holding), .groups = 'drop') %>% 
   slice_max(mean_user, prop = 0.05) %>%
+  mutate(name = paste0(ticker, ": ", substr(as.character(mean_user), 1, 3), "k"))
+tmp %>% 
   select(ticker) %>% 
-  semi_join(RH_usage, .) %>% 
-  ggplot(aes(x = date, y = users_holding, color = ticker)) +
+  semi_join(RH_usage, .) %>%
+  left_join(tmp %>% select(ticker, name), by = 'ticker') %>% 
+  mutate(name = factor(name, levels = tmp$name)) %>% 
+  ggplot(aes(x = date, y = users_holding, color = name)) +
   geom_line(alpha = 0.5) +
   scale_y_continuous(labels = scales::comma_format()) +
-  labs(title = "Top 5% highest held securities on Robinhood",
-       caption = paste0("Based on mean users between ", paste0(range(RH_usage$date), collapse = " to ")),
+  labs(title = "Top 5% most frequently held securities on Robinhood",
+       caption = paste0(range(RH_usage$date), collapse = " to "),
        x = NULL,
-       y = NULL) +
-  theme(legend.title = element_blank())
-
+       y = NULL,
+       color = 'Ticker: mean users')
+ggsave("Plots/RH_usage_top_tickers.png",
+       width = 20,
+       height = 12,
+       units = 'cm')
 
 get_date_of_interest <- function(ticker, date, method = c("lead", "lag"), extra = 0) {
   # function returns a lead/lag usage number after accounting for weekends
