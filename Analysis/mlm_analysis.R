@@ -141,6 +141,10 @@ RH_usage %>%
   labs(title = "Total securities owned by Robinhood users",
        x = NULL,
        y = NULL)
+ggsave("Plots/RH_usage.png",
+       width = 20,
+       height = 16,
+       units = 'cm')
 
 # RH usage over time by ticker
 RH_usage %>% 

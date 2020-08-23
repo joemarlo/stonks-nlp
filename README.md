@@ -17,3 +17,10 @@ Examining the link between [r/wallstreetbets](https://www.reddit.com/r/wallstree
 <p align="center">
   <img src="Plots/top_mentions.png" width=79%>
 </p>
+
+
+# Other
+
+<p align="center">
+  <img src="Plots/RH_usage.png" width=79%>
+</p>
