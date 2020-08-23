@@ -143,16 +143,26 @@ RH_usage %>%
        y = NULL)
 ggsave("Plots/RH_usage.png",
        width = 20,
-       height = 16,
+       height = 12,
        units = 'cm')
 
 # RH usage over time by ticker
 RH_usage %>% 
+  group_by(ticker) %>% 
+  summarize(mean_user = mean(users_holding), .groups = 'drop') %>% 
+  slice_max(mean_user, prop = 0.05) %>%
+  select(ticker) %>% 
+  semi_join(RH_usage, .) %>% 
   ggplot(aes(x = date, y = users_holding, color = ticker)) +
-  geom_line() +
-  theme(legend.position = 'none')
+  geom_line(alpha = 0.5) +
+  scale_y_continuous(labels = scales::comma_format()) +
+  labs(title = "Top 5% highest held securities on Robinhood",
+       caption = paste0("Based on mean users between ", paste0(range(RH_usage$date), collapse = " to ")),
+       x = NULL,
+       y = NULL) +
+  theme(legend.title = element_blank())
 
-# add lead and lagged data to post_df
+
 get_date_of_interest <- function(ticker, date, method = c("lead", "lag"), extra = 0) {
   # function returns a lead/lag usage number after accounting for weekends
   
@@ -204,6 +214,9 @@ final_df <- na.omit(final_df)
 # calculate % change in users
 final_df$percent_change <- final_df$users_holding_lead / final_df$users_holding_lag - 1 
 
+# add boolean identifying before / after market peak
+final_df$pre_peak <- final_df$date < as.Date('2020-02-19')
+
 
 # frequentist -------------------------------------------------------------
 
@@ -215,9 +228,12 @@ final_df %>%
 
 broom::tidy(lm(percent_change ~ sentiment_score + n_comments, data = final_df))
 
-# still need to group by before after covid check
-lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | ),
-           REML = T, data = final_df)
+# fit mlm pooled with pre_peak
+mlm_freq_model <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | pre_peak),
+                             REML = T, data = final_df)
+
+summary(mlm_freq_model)
+
 
 # bayesian ----------------------------------------------------------------
 

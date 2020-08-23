@@ -19,7 +19,7 @@ Examining the link between [r/wallstreetbets](https://www.reddit.com/r/wallstree
 </p>
 
 
-# Other
+## Other
 
 <p align="center">
   <img src="Plots/RH_usage.png" width=79%>
