@@ -38,7 +38,6 @@ for post in posts_df.body:
         clean_ticker = ticker.replace("$", "")
         if clean_ticker in list(tickers_df.ticker):
             matches.append(clean_ticker)
-    #found_dollars.append(matches)
     found_dollars.append(', '.join(set(matches)))
 
 # add list to main dataframe
@@ -56,9 +55,9 @@ stop_words = set(stopwords.words('english'))
 clean_tokens = []
 for sentence in tokens:
     filtered_sentence = []
-    for w in sentence:
-        if w not in stop_words and w.isalpha():
-            filtered_sentence.append(w)
+    for word in sentence:
+        if word not in stop_words and word.isalpha():
+            filtered_sentence.append(word)
     clean_tokens.append(filtered_sentence)
 
 # need to parse out LLC etc; first figure out which are most frequent
@@ -116,7 +115,7 @@ ticker_matches = []
 for match in matches:
     post_tickers = []
     for word in match:
-        # first remove capital one, store
+        # first remove capital one, store, target
         if word in ["one", "store", "target"]:
             continue
         # get index from clean_names list
@@ -128,7 +127,6 @@ for match in matches:
 posts_df["found_names"] = ticker_matches
 
 # find all the matching tickers per post
-# TODO remove tickers that are english words
 # we need to retain the case here b/c they often put the ticker in uppercase
     # otherwise there are many incorrect matches
 reg_case_posts_df = pd.read_csv("Analysis/scored_posts.csv")
@@ -136,9 +134,9 @@ reg_case_tokens = [word_tokenize(body) for body in reg_case_posts_df.body]
 reg_case_clean_tokens = []
 for post in reg_case_tokens:
     filtered_post = []
-    for w in post:
-        if w not in stop_words and w.isalpha():
-            filtered_post.append(w)
+    for word in post:
+        if word not in stop_words and word.isalpha():
+            filtered_post.append(word)
     reg_case_clean_tokens.append(filtered_post)
 
 found_tickers = []
@@ -146,7 +144,7 @@ for post in reg_case_clean_tokens:
     post_tickers = []
     for word in post:
         # first remove errors
-        if word in ["YOLO", "EDIT", "STOR"]:
+        if word in ["YOLO", "EDIT", "STOR", 'ET', 'NOW', 'TWO']:
             continue
         is_ticker = word in list(tickers_df.ticker.str.upper())
         if is_ticker:

@@ -11,9 +11,9 @@ Examining the link between [r/wallstreetbets](https://www.reddit.com/r/wallstree
 </p>
 
 <p align="center">
-  <img src="Plots/top_mentions.png" width=79%>
+  <img src="Plots/scores_by_top_mentions.png" width=79%>
 </p>
 
 <p align="center">
-  <img src="Plots/scores_by_top_mentions.png" width=79%>
+  <img src="Plots/top_mentions.png" width=79%>
 </p>
