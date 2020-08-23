@@ -104,7 +104,7 @@ for score in range(0, len(scores)):
 
 # histogram of scores
 plt.figure(figsize=(9, 5))
-sns.distplot(compound_scores).set_title('Distribution of sentiment scores of r/WallStreetBets posts')
+sns.distplot(compound_scores).set_title("Distribution of sentiment scores of r/WallStreetBets posts' body text")
 plt.show()
 
 # add to dataframe
@@ -119,12 +119,7 @@ sns.distplot(posts_df.title_score).set_title('Distribution of sentiment scores o
 plt.show()
 
 # insert Reddit credentials here
-#reddit = praw.Reddit(...)
-reddit = praw.Reddit(
-client_id = "V9-uqOgDp7Mx6w",
-client_secret = "qwr2uQldSuR1jXB9RGfpLfhbuAk",
-username = "tall_george_",password = "Brewer5!",
-user_agent =  "Get_Stonks by /u/tall_george_")
+reddit = praw.Reddit(...)
 
 # make sure we're in read-only mode
 reddit.read_only = True

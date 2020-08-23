@@ -3,7 +3,7 @@ import datetime as dt
 import os
 import re
 import numpy as np
-#import tidytext
+import tidytext
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 import matplotlib.pyplot as plt
@@ -100,7 +100,7 @@ for sentence in names_tokens:
 
 # run the leven distance and return the top match but only if that top match
     # has a score greater than 95
-# this takes a while to run (10min)
+# this takes a while to run (10min per 500 posts)
 matches = []
 for post in clean_tokens:
     post_matches = []
@@ -111,11 +111,15 @@ for post in clean_tokens:
     matches.append(post_matches)
 del sentence, post_matches, word, best_match
 
-# match the extraction to the ticker
+# match the extraction to the ticker and remove mistakes due to matching algo
 ticker_matches = []
 for match in matches:
     post_tickers = []
     for word in match:
+        # first remove capital one, store
+        if word in ["one", "store", "target"]:
+            continue
+        # get index from clean_names list
         index = np.argwhere(np.array(clean_names) == word)[0]
         post_tickers.append(tickers_df.ticker[int(index)])
     ticker_matches.append(', '.join(set(post_tickers)))
@@ -141,6 +145,9 @@ found_tickers = []
 for post in reg_case_clean_tokens:
     post_tickers = []
     for word in post:
+        # first remove errors
+        if word in ["YOLO", "EDIT", "STOR"]:
+            continue
         is_ticker = word in list(tickers_df.ticker.str.upper())
         if is_ticker:
             post_tickers.append(word)
@@ -153,7 +160,18 @@ posts_df["found_tickers"] = found_tickers
 
 # add new columns with all found companies
 posts_df["all_found_companies"] = posts_df.dollar_tickers + ", " + posts_df.found_names + ", " + posts_df.found_tickers
-posts_df['all_found_companies'] = posts_df['all_found_companies'].apply(lambda x: re.sub(", ", " ", x).strip().upper())
+posts_df['all_found_companies'] = posts_df['all_found_companies'].apply(lambda row: (
+    re.sub(", ", " ", row).strip().upper()
+))
+
+# remove duplicates
+posts_df['all_found_companies'] = posts_df['all_found_companies'].apply(lambda row: (
+    ' '.join(set(row.split()))
+))
+
+# remove posts with no tickers and keep only important columns
+final_df = posts_df[posts_df.all_found_companies != '']
+final_df = final_df[["id", "url", "comms_num", "date", "sentiment_score", "all_found_companies"]]
 
 # write out dataframe
-posts_df[["url", "comms_num", "date", "sentiment_score", "all_found_companies"]].to_csv("Analysis/scored_named_posts.csv", index=False)
+final_df.to_csv("Analysis/scored_named_posts.csv", index=False)

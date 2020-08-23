@@ -20,7 +20,7 @@ api = PushshiftAPI(reddit)
 
 # set range of dates to scrape
 start_day = dt.datetime(2020, 1, 1)
-date_list = [start_day + dt.timedelta(days=x) for x in range(10)]
+date_list = [start_day + dt.timedelta(days=x) for x in range(100)]
 
 # create empty list to hold submission ids
 all_ids = list()
@@ -90,4 +90,4 @@ items_df = items_df[items_df['body'] != '[removed]']
 items_df = items_df[items_df['body'] != '[deleted]']
 
 # write out dataframe
-items_df.to_csv("scraped_posts.csv", index=False)
+items_df.to_csv("Scraping_WSB/scraped_posts.csv", index=False)
