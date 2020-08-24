@@ -256,9 +256,10 @@ confint(mlm_freq_model) %>%
   geom_point() +
   geom_linerange() + 
   coord_flip() +
-  labs(title = "95% confidence range of MLM fixed-effects",
+  labs(title = "95% confidence interval of MLM fixed-effects",
        subtitle = "Frequentist model with pre/post peak as random intercept with fixed mean",
-       x = "Estimate (% change in users)")
+       x = NULL,
+       y = "Estimate (% change in users)")
 ggsave("Plots/freq_fixed_effects.png",
        width = 20,
        height = 16,
