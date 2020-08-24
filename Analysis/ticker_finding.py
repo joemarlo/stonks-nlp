@@ -48,7 +48,7 @@ del found_dollars, matches, captured_text, clean_ticker
 # first tokenize the words (fyi this seperates out the $)
 tokens = [word_tokenize(body) for body in posts_df.body]
 
-# remove stopwords and puncation
+# remove stopwords and punctuation
 stop_words = set(stopwords.words('english'))
 
 # remove the stop words and non-alpha from the tokens
@@ -126,7 +126,7 @@ for match in matches:
 # add list to main dataframe
 posts_df["found_names"] = ticker_matches
 
-# find all the matching tickers per post
+# find all the matching tickers per post that do not have a $ beforehand
 # we need to retain the case here b/c they often put the ticker in uppercase
     # otherwise there are many incorrect matches
 reg_case_posts_df = pd.read_csv("Analysis/scored_posts.csv")

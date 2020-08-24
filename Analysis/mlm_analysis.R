@@ -130,7 +130,7 @@ RH_usage %>%
   geom_line() +
   geom_vline(xintercept = as.Date('2020-02-19')) +
   annotate(geom = 'text', x = as.Date('2020-02-15'), y = 1.0e+7,
-           label = "Market peaks: 2/19", hjust = 1) +
+           label = "Market peak: 2/19", hjust = 1) +
   geom_vline(xintercept = as.Date('2020-03-20')) +
   annotate(geom = 'text', x = as.Date('2020-03-26'), y = 5.0e+6,
            label = "NY stay-at-home\norder: 3/20", hjust = 0) +
@@ -159,44 +159,46 @@ tmp %>%
   ggplot(aes(x = date, y = users_holding, color = name)) +
   geom_line(alpha = 0.5) +
   scale_y_continuous(labels = scales::comma_format()) +
-  labs(title = "Top 5% most frequently held securities on Robinhood",
+  labs(title = "Top 5% most frequently held securities",
        caption = paste0(range(RH_usage$date), collapse = " to "),
        x = NULL,
        y = "n users that hold the security",
        color = 'Ticker: mean users')
+rm(tmp)
 ggsave("Plots/RH_usage_top_tickers.png",
        width = 20,
        height = 12,
        units = 'cm')
-rm(tmp)
 
-get_date_of_interest <- function(ticker, date, method = c("lead", "lag"), extra = 0) {
+get_date_of_interest <- function(ticker, date, method = c("lead", "lag")) {
   # function returns a lead/lag usage number after accounting for weekends
   
   if (class(date) != 'Date') return(NA)
   weekday <- weekdays(date)
     
+  # lead min(two days, 2 business days)
   if (method == 'lead') {
       new_date <- case_when(
-        weekday == "Sunday" ~ date + 1 + extra,
-        weekday == "Monday" ~ date + 1 + extra,
-        weekday == "Tuesday" ~ date + 1 + extra,
-        weekday == "Wednesday" ~ date + 1 + extra,
-        weekday == "Thursday" ~ date + 1 + extra,
-        weekday == "Friday" ~ date + 3 + extra,
-        weekday == "Saturday" ~ date + 2 + extra
+        weekday == "Sunday" ~ date + 2,
+        weekday == "Monday" ~ date + 2,
+        weekday == "Tuesday" ~ date + 2,
+        weekday == "Wednesday" ~ date + 2,
+        weekday == "Thursday" ~ date + 4,
+        weekday == "Friday" ~ date + 3,
+        weekday == "Saturday" ~ date + 2
       )
     }
     
+  # lag one business days
   if (method == 'lag') {
       new_date <- case_when(
-        weekday == "Sunday" ~ date - 2 - extra,
-        weekday == "Monday" ~ date - 3 - extra,
-        weekday == "Tuesday" ~ date - 1 - extra,
-        weekday == "Wednesday" ~ date - 1 - extra,
-        weekday == "Thursday" ~ date - 1 - extra,
-        weekday == "Friday" ~ date - 1 - extra,
-        weekday == "Saturday" ~ date - 1 - extra
+        weekday == "Sunday" ~ date - 2,
+        weekday == "Monday" ~ date - 3,
+        weekday == "Tuesday" ~ date - 1,
+        weekday == "Wednesday" ~ date - 1,
+        weekday == "Thursday" ~ date - 1,
+        weekday == "Friday" ~ date - 1,
+        weekday == "Saturday" ~ date - 1
       )
     }
     
@@ -211,8 +213,8 @@ get_date_of_interest <- function(ticker, date, method = c("lead", "lag"), extra 
 final_df <- posts_df %>% 
   left_join(RH_usage, by = c("date", "ticker")) %>% 
   rowwise() %>% 
-  mutate(users_holding_lead = get_date_of_interest(ticker, date, "lead", extra = 1),
-         users_holding_lag = get_date_of_interest(ticker, date, "lag"), extra = 1) %>% 
+  mutate(users_holding_lead = get_date_of_interest(ticker, date, "lead"),
+         users_holding_lag = get_date_of_interest(ticker, date, "lag")) %>% 
   ungroup()
 
 # throw out rows we don't have all user data on
@@ -229,18 +231,38 @@ final_df$pre_peak <- final_df$date < as.Date('2020-02-19')
 
 # plot percent_change vs. sentiment_score
 final_df %>% 
-  ggplot(aes(x = sentiment_score, y = percent_change)) +
+  ggplot(aes(x = sentiment_score, y = percent_change, color = pre_peak)) +
   geom_point(alpha = 0.3) +
-  geom_smooth()
+  geom_smooth() +
+  scale_y_log10()
 
-broom::tidy(lm(percent_change ~ sentiment_score + n_comments, data = final_df))
+broom::tidy(lm(percent_change ~ sentiment_score + n_comments + pre_peak, data = final_df))
 
-# fit mlm pooled with pre_peak
+# fit mlm with pre_peak as a random effect
 mlm_freq_model <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | pre_peak),
                              REML = T, data = final_df)
-
 summary(mlm_freq_model)
 
+# look at the residuals
+plot(mlm_freq_model)
+
+# plot the 95% confidence range of the fixed effects
+confint(mlm_freq_model) %>% 
+  data.frame() %>% 
+  rownames_to_column() %>% 
+  filter(rowname %in% c("sentiment_score", "n_comments")) %>% 
+  mutate(estimate = fixef(mlm_freq_model)[2:3]) %>% 
+  ggplot(aes(x = rowname, y = estimate, ymin = X2.5.., ymax = X97.5..)) +
+  geom_point() +
+  geom_linerange() + 
+  coord_flip() +
+  labs(title = "95% confidence range of MLM fixed-effects",
+       subtitle = "Frequentist model with pre/post peak as random intercept with fixed mean",
+       x = "Estimate (% change in users)")
+ggsave("Plots/freq_fixed_effects.png",
+       width = 20,
+       height = 16,
+       units = 'cm')
 
 # bayesian ----------------------------------------------------------------
 

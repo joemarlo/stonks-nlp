@@ -28,3 +28,9 @@ Examining the link between [r/wallstreetbets](https://www.reddit.com/r/wallstree
 <p align="center">
   <img src="Plots/RH_usage_top_tickers.png" width=79%>
 </p>
+
+## Modeling
+
+<p align="center">
+  <img src="Plots/freq_fixed_effects.png" width=79%>
+</p>
