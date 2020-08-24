@@ -40,6 +40,29 @@ tokens_df[["word"]].value_counts().head(n=200)
 # instantiate the SentimentIntensityAnalyzer
 vader = SentimentIntensityAnalyzer()
 
+# add words from McDonald financial corpus
+positive_url = "https://raw.githubusercontent.com/jperla/sentiment-data/master/finance/LoughranMcDonald_Negative.csv"
+negative_url = "https://raw.githubusercontent.com/jperla/sentiment-data/master/finance/LoughranMcDonald_Positive.csv"
+neutral_url = "https://raw.githubusercontent.com/jperla/sentiment-data/master/finance/LoughranMcDonald_Uncertainty.csv"
+positive_df = pd.read_csv(positive_url, header=None)
+negative_df = pd.read_csv(negative_url, header=None)
+neutral_df = pd.read_csv(neutral_url, header=None)
+
+# add sentiment scores
+positive_df.loc[:,1] = 10
+negative_df.loc[:,1] = -10
+neutral_df.loc[:,1] = 0
+
+# convert to dictionary
+positive_dict = positive_df.set_index(0).to_dict()
+negative_dict = negative_df.set_index(0).to_dict()
+neutral_dict = neutral_df.set_index(0).to_dict()
+
+# add the words
+vader.lexicon.update(positive_dict)
+vader.lexicon.update(negative_dict)
+vader.lexicon.update(neutral_dict)
+
 # add custom words words
 WSB_lingo = {
 "tendies": 100,
@@ -70,29 +93,6 @@ WSB_lingo = {
 
 # add custom words
 vader.lexicon.update(WSB_lingo)
-
-# add words from McDonald financial corpus
-positive_url = "https://raw.githubusercontent.com/jperla/sentiment-data/master/finance/LoughranMcDonald_Negative.csv"
-negative_url = "https://raw.githubusercontent.com/jperla/sentiment-data/master/finance/LoughranMcDonald_Positive.csv"
-neutral_url = "https://raw.githubusercontent.com/jperla/sentiment-data/master/finance/LoughranMcDonald_Uncertainty.csv"
-positive_df = pd.read_csv(positive_url, header=None)
-negative_df = pd.read_csv(negative_url, header=None)
-neutral_df = pd.read_csv(neutral_url, header=None)
-
-# add sentiment scores
-positive_df.loc[:,1] = 10
-negative_df.loc[:,1] = -10
-neutral_df.loc[:,1] = 0
-
-# convert to dictionary
-positive_dict = positive_df.set_index(0).to_dict()
-negative_dict = negative_df.set_index(0).to_dict()
-neutral_dict = neutral_df.set_index(0).to_dict()
-
-# add the words
-vader.lexicon.update(positive_dict)
-vader.lexicon.update(negative_dict)
-vader.lexicon.update(neutral_dict)
 
 # run the analyzer on the original post body
 scores = [vader.polarity_scores(body) for body in posts_df.body]

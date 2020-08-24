@@ -65,7 +65,7 @@ ggsave("Plots/scores_by_top_mentions.png",
 # counts of tickers
 posts_df %>% 
   count(ticker) %>% 
-  slice_max(n, prop = 0.1) %>% 
+  slice_max(n, prop = 0.1) %>%
   ggplot(aes(x = n, y = reorder(ticker, n))) +
   geom_col() +
   labs(title = "Top 10% mentioned securities in r/wallstreetbets",
@@ -95,7 +95,6 @@ posts_df %>%
        caption = "2020-01-01 to 2020-04-10",
        x = "n comments per post",
        y = 'n')
-
 
 
 # read in the robinhood usage data ----------------------------------------
@@ -138,9 +137,9 @@ RH_usage %>%
   geom_vline(xintercept = as.Date('2020-03-23')) +
   annotate(geom = 'text', x = as.Date('2020-03-28'), y = 1.0e+7,
            label = "Market\nbottom: 3/23", hjust = 0) +
-  labs(title = "Total securities owned by Robinhood users",
+  labs(title = "Total unique securities owned by Robinhood users",
        x = NULL,
-       y = NULL)
+       y = "n users that hold the security")
 ggsave("Plots/RH_usage.png",
        width = 20,
        height = 12,
@@ -163,12 +162,13 @@ tmp %>%
   labs(title = "Top 5% most frequently held securities on Robinhood",
        caption = paste0(range(RH_usage$date), collapse = " to "),
        x = NULL,
-       y = NULL,
+       y = "n users that hold the security",
        color = 'Ticker: mean users')
 ggsave("Plots/RH_usage_top_tickers.png",
        width = 20,
        height = 12,
        units = 'cm')
+rm(tmp)
 
 get_date_of_interest <- function(ticker, date, method = c("lead", "lag"), extra = 0) {
   # function returns a lead/lag usage number after accounting for weekends
