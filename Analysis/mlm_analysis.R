@@ -226,7 +226,7 @@ final_df <- na.omit(final_df)
 final_df$percent_change <- final_df$users_holding_lead / final_df$users_holding_lag - 1 
 
 # add boolean identifying before / after market peak
-final_df$pre_peak <- final_df$date < as.Date('2020-02-19')
+final_df$post_peak <- final_df$date > as.Date('2020-02-19')
 
 
 # frequentist -------------------------------------------------------------
@@ -236,18 +236,27 @@ cor(final_df$sentiment_score, final_df$percent_change)
 
 # plot percent_change vs. sentiment_score
 final_df %>% 
-  ggplot(aes(x = sentiment_score, y = percent_change, color = pre_peak)) +
+  ggplot(aes(x = sentiment_score, y = percent_change, color = post_peak)) +
   geom_point(alpha = 0.3) +
   geom_smooth() +
   scale_y_log10()
 
 # fit a lm
-broom::tidy(lm(percent_change ~ sentiment_score + n_comments + pre_peak, data = final_df))
+broom::tidy(lm(percent_change ~ sentiment_score + n_comments + post_peak, data = final_df))
 
 # fit mlm with pre_peak as a random effect
-mlm_freq_model <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | pre_peak),
+mlm_freq_model <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | post_peak),
                              REML = T, data = final_df)
 summary(mlm_freq_model)
+
+# fit a second mlm with pre-peak as random effect and fixed effect
+mlm_freq_model_2 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + post_peak + (1 | post_peak),
+                             REML = T, data = final_df)
+
+# compare the two models and retain the one the explains most variability
+anova(mlm_freq_model, mlm_freq_model_2)
+mlm_freq_model <- mlm_freq_model_2
+rm(mlm_freq_model_2)
 
 # look at the residuals
 plot(mlm_freq_model)
@@ -257,7 +266,7 @@ DescTools::RMSE(predict(mlm_freq_model), final_df$percent_change)
 confint(mlm_freq_model) %>% 
   data.frame() %>% 
   rownames_to_column() %>%
-  .[3:5,] %>% 
+  .[3:6,] %>% 
   mutate(estimate = fixef(mlm_freq_model)) %>% 
   ggplot(aes(x = rowname, y = estimate, ymin = X2.5.., ymax = X97.5..)) +
   geom_point() +
