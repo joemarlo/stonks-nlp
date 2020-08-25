@@ -22,7 +22,8 @@ posts_df <- posts_df %>%
 
 # sentiment scores over time
 posts_df %>% 
-  pivot_wider(names_from = 'ticker') %>% 
+  select(-ticker) %>% 
+  distinct() %>% 
   ggplot(aes(x = date, y = sentiment_score)) +
   geom_point(alpha = 0.6) +
   labs(title = "Sentiment scores over time",
@@ -32,7 +33,8 @@ posts_df %>%
 
 # sentiment scores by number of comments
 posts_df %>% 
-  pivot_wider(names_from = 'ticker') %>% 
+  select(-ticker) %>% 
+  distinct() %>% 
   ggplot(aes(x = n_comments, y = sentiment_score)) +
   geom_point(alpha = 0.6) +
   labs(title = "Comments per post",
@@ -229,6 +231,9 @@ final_df$pre_peak <- final_df$date < as.Date('2020-02-19')
 
 # frequentist -------------------------------------------------------------
 
+# correlation between outcome and predictor
+cor(final_df$sentiment_score, final_df$percent_change)
+
 # plot percent_change vs. sentiment_score
 final_df %>% 
   ggplot(aes(x = sentiment_score, y = percent_change, color = pre_peak)) +
@@ -236,6 +241,7 @@ final_df %>%
   geom_smooth() +
   scale_y_log10()
 
+# fit a lm
 broom::tidy(lm(percent_change ~ sentiment_score + n_comments + pre_peak, data = final_df))
 
 # fit mlm with pre_peak as a random effect
@@ -245,13 +251,14 @@ summary(mlm_freq_model)
 
 # look at the residuals
 plot(mlm_freq_model)
+DescTools::RMSE(predict(mlm_freq_model), final_df$percent_change)
 
 # plot the 95% confidence range of the fixed effects
 confint(mlm_freq_model) %>% 
   data.frame() %>% 
-  rownames_to_column() %>% 
-  filter(rowname %in% c("sentiment_score", "n_comments")) %>% 
-  mutate(estimate = fixef(mlm_freq_model)[2:3]) %>% 
+  rownames_to_column() %>%
+  .[3:5,] %>% 
+  mutate(estimate = fixef(mlm_freq_model)) %>% 
   ggplot(aes(x = rowname, y = estimate, ymin = X2.5.., ymax = X97.5..)) +
   geom_point() +
   geom_linerange() + 
@@ -262,8 +269,9 @@ confint(mlm_freq_model) %>%
        y = "Estimate (% change in users)")
 ggsave("Plots/freq_fixed_effects.png",
        width = 20,
-       height = 16,
+       height = 10,
        units = 'cm')
+
 
 # bayesian ----------------------------------------------------------------
 
