@@ -244,19 +244,29 @@ final_df %>%
 # fit a lm
 broom::tidy(lm(percent_change ~ sentiment_score + n_comments + post_peak, data = final_df))
 
-# fit mlm with pre_peak as a random effect
+# fit mlm with post_peak as a random effect
 mlm_freq_model <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | post_peak),
                              REML = T, data = final_df)
 summary(mlm_freq_model)
 
-# fit a second mlm with pre-peak as random effect and fixed effect
+# fit a second mlm with post-peak as random effect and fixed effect
 mlm_freq_model_2 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + post_peak + (1 | post_peak),
-                             REML = T, data = final_df)
+                               REML = T, data = final_df)
+
+# fit a third mlm with post-peak as random effect and fixed effect and ticker as random effect
+mlm_freq_model_3 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + post_peak + (1 | ticker / post_peak),
+                               REML = T, data = final_df)
+
+# fit a fourth mlm same as three but w/ post_peak as fixed effect
+mlm_freq_model_4 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | ticker / post_peak),
+                               REML = T, data = final_df)
 
 # compare the two models and retain the one the explains most variability
 anova(mlm_freq_model, mlm_freq_model_2)
-mlm_freq_model <- mlm_freq_model_2
-rm(mlm_freq_model_2)
+anova(mlm_freq_model_2, mlm_freq_model_3)
+anova(mlm_freq_model_3, mlm_freq_model_4)
+mlm_freq_model <- mlm_freq_model_3
+rm(mlm_freq_model_2, mlm_freq_model_3, mlm_freq_model_4)
 
 # look at the residuals
 plot(mlm_freq_model)
@@ -266,14 +276,14 @@ DescTools::RMSE(predict(mlm_freq_model), final_df$percent_change)
 confint(mlm_freq_model) %>% 
   data.frame() %>% 
   rownames_to_column() %>%
-  .[3:6,] %>% 
+  .[4:7,] %>% 
   mutate(estimate = fixef(mlm_freq_model)) %>% 
   ggplot(aes(x = rowname, y = estimate, ymin = X2.5.., ymax = X97.5..)) +
   geom_point() +
   geom_linerange() + 
   coord_flip() +
   labs(title = "95% confidence interval of MLM fixed-effects",
-       subtitle = "Frequentist model with pre/post peak as random intercept with fixed mean",
+       subtitle = "Frequentist model with company and pre/post peak as random effect",
        x = NULL,
        y = "Estimate (% change in users)")
 ggsave("Plots/freq_fixed_effects.png",
@@ -281,6 +291,7 @@ ggsave("Plots/freq_fixed_effects.png",
        height = 10,
        units = 'cm')
 
+# Q: is there a latent "popularity" variable (i.e. total mentions)? 
 
 # bayesian ----------------------------------------------------------------
 
