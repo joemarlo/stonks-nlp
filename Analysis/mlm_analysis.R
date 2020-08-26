@@ -1,7 +1,8 @@
 library(tidyverse)
 library(lme4)
-library(brms)
+library(rstanarm)
 library(ggridges)
+options(mc.cores = parallel::detectCores())
 theme_set(theme_minimal())
 
 setwd("~/Dropbox/Data/Projects/stonks-nlp/")
@@ -139,6 +140,7 @@ RH_usage %>%
   geom_vline(xintercept = as.Date('2020-03-23')) +
   annotate(geom = 'text', x = as.Date('2020-03-28'), y = 1.0e+7,
            label = "Market\nbottom: 3/23", hjust = 0) +
+  scale_y_continuous(labels = scales::comma_format()) +
   labs(title = "Total unique securities owned by Robinhood users",
        x = NULL,
        y = "n users that hold the security")
@@ -249,11 +251,15 @@ mlm_freq_model <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 
                              REML = T, data = final_df)
 summary(mlm_freq_model)
 
+# test if mlm model grouping on post_peak is necessary
+lmerTest::rand(mlm_freq_model) # results indicate it is not necessary
+
 # fit a second mlm with post-peak as random effect and fixed effect
 mlm_freq_model_2 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + post_peak + (1 | post_peak),
                                REML = T, data = final_df)
 
 # fit a third mlm with post-peak as random effect and fixed effect and ticker as random effect
+# this means intercepts vary across the ticker:post_peak groups but not the slopes
 mlm_freq_model_3 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + post_peak + (1 | ticker / post_peak),
                                REML = T, data = final_df)
 
@@ -261,12 +267,19 @@ mlm_freq_model_3 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + p
 mlm_freq_model_4 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | ticker / post_peak),
                                REML = T, data = final_df)
 
+# fit a fifth mlm where the effect of sentiment score and n_comments varies differently based on post_peak 
+# we're allowing sentiment_score and n_comments to vary between the two post_peak groups
+  # then there's global "average" coefficients for sentiment_score and n_comments
+mlm_freq_model_5 <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 + sentiment_score + n_comments | post_peak),
+                               REML = T, data = final_df)
+
 # compare the two models and retain the one the explains most variability
 anova(mlm_freq_model, mlm_freq_model_2)
 anova(mlm_freq_model_2, mlm_freq_model_3)
 anova(mlm_freq_model_3, mlm_freq_model_4)
+anova(mlm_freq_model_3, mlm_freq_model_5)
 mlm_freq_model <- mlm_freq_model_3
-rm(mlm_freq_model_2, mlm_freq_model_3, mlm_freq_model_4)
+rm(mlm_freq_model_2, mlm_freq_model_3, mlm_freq_model_4, mlm_freq_model_5)
 
 # look at the residuals
 plot(mlm_freq_model)
@@ -286,12 +299,8 @@ confint(mlm_freq_model) %>%
        subtitle = "Frequentist model with company and pre/post peak as random effect",
        x = NULL,
        y = "Estimate (% change in users)")
-ggsave("Plots/freq_fixed_effects.png",
-       width = 20,
-       height = 10,
-       units = 'cm')
 
-# Q: is there a latent "popularity" variable (i.e. total mentions)? 
 
 # bayesian ----------------------------------------------------------------
+
 

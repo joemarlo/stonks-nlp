@@ -9,6 +9,7 @@ import tidytext
 import matplotlib.pyplot as plt
 import seaborn as sns
 import praw
+import time
 
 # set working directory
 os.chdir("/home/joemarlo/Dropbox/Data/Projects/stonks-nlp")
@@ -125,20 +126,36 @@ reddit = praw.Reddit(...)
 reddit.read_only = True
 
 # get the mean sentiment score for all of the top-level comments per post
+# TODO: need to fix try except because it will return a multidimenional list
 post_scores = []
 for i in range(len(posts_df.id)):
-    submission = reddit.submission(id=posts_df.id[i])
-    submission.comments.replace_more(limit=0)
-    comment_scores = []
-    comment_upvotes = []
-    for top_level_comment in submission.comments:
-        comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
-        comment_upvotes.append(top_level_comment.score)
-    if len(comment_scores) > 0:
-        weighted_score = (np.array(comment_scores) * np.array(comment_upvotes)).sum() / np.array(comment_upvotes).sum()
-        post_scores.append(weighted_score)
-    else:
-        post_scores.append(np.nan)
+    try:
+        submission = reddit.submission(id=posts_df.id[i])
+        submission.comments.replace_more(limit=0)
+        comment_scores = []
+        comment_upvotes = []
+        for top_level_comment in submission.comments:
+            comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
+            comment_upvotes.append(top_level_comment.score)
+        if len(comment_scores) > 0:
+            weighted_score = (np.array(comment_scores) * np.array(comment_upvotes)).sum() / np.array(comment_upvotes).sum()
+            post_scores.append(weighted_score)
+        else:
+            post_scores.append(np.nan)
+    except:
+        time.sleep(10)
+        submission = reddit.submission(id=posts_df.id[i])
+        submission.comments.replace_more(limit=0)
+        comment_scores = []
+        comment_upvotes = []
+        for top_level_comment in submission.comments:
+            comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
+            comment_upvotes.append(top_level_comment.score)
+        if len(comment_scores) > 0:
+            weighted_score = (np.array(comment_scores) * np.array(comment_upvotes)).sum() / np.array(comment_upvotes).sum()
+            post_scores.append(weighted_score)
+        else:
+            post_scores.append(np.nan)
 
 # histogram of scores
 plt.figure(figsize=(9, 5))
