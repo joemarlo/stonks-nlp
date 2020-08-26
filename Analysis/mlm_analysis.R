@@ -100,13 +100,34 @@ posts_df %>%
        y = 'n')
 
 
+# add in sample of tickers that were not found ----------------------------
+
+tickers_searched_for <- read_csv("Data/ticker_names.csv")
+tickers_not_found <- anti_join(tickers_searched_for, distinct(posts_df[, 'ticker']))
+
+# create an equal sized sample of tickers not found in the reddit data
+counter_sample_df <- slice_sample(posts_df, n = nrow(posts_df), replace = TRUE) %>% 
+  mutate(ticker = sample(tickers_not_found$ticker, size = nrow(posts_df), replace = TRUE),
+         sentiment_score = 0,
+         n_comments = NA) %>% 
+  select(date, ticker, sentiment_score, n_comments)
+
+# stack the dataframe with posts_df and change sentiment score to a categorical
+  # based on the absoluete value of sentiment
+final_df <- counter_sample_df %>% 
+  bind_rows(posts_df %>% select(date, ticker, sentiment_score, n_comments)) %>% 
+  mutate(sentiment = if_else(abs(sentiment_score) >= 0.5, "high",
+                             if_else(abs(sentiment_score) >= 0.1, "low",
+                             "none"))) %>% 
+  select(-sentiment_score)
+
 # read in the robinhood usage data ----------------------------------------
 
 # get the names of the csvs that match the tickers in posts_df 
 files_to_read <- list.files("Data/Robinhood_usage") %>%
   enframe() %>% 
   mutate(ticker = str_remove(value, ".csv")) %>% 
-  right_join(posts_df[, 'ticker']) %>% 
+  right_join(final_df[, 'ticker']) %>% 
   pull(value) %>% 
   unique()
 
@@ -132,7 +153,7 @@ RH_usage %>%
   ggplot(aes(x = date, y = n)) + 
   geom_line() +
   geom_vline(xintercept = as.Date('2020-02-19')) +
-  annotate(geom = 'text', x = as.Date('2020-02-15'), y = 1.0e+7,
+  annotate(geom = 'text', x = as.Date('2020-02-15'), y = 2.0e+7,
            label = "Market peak: 2/19", hjust = 1) +
   geom_vline(xintercept = as.Date('2020-03-20')) +
   annotate(geom = 'text', x = as.Date('2020-03-26'), y = 5.0e+6,
@@ -142,6 +163,7 @@ RH_usage %>%
            label = "Market\nbottom: 3/23", hjust = 0) +
   scale_y_continuous(labels = scales::comma_format()) +
   labs(title = "Total unique securities owned by Robinhood users",
+       subtitle = 'For the top ~700 securities',
        x = NULL,
        y = "n users that hold the security")
 ggsave("Plots/RH_usage.png",
@@ -164,6 +186,7 @@ tmp %>%
   geom_line(alpha = 0.5) +
   scale_y_continuous(labels = scales::comma_format()) +
   labs(title = "Top 5% most frequently held securities",
+       subtitle = "Population of the top ~700 securities",
        caption = paste0(range(RH_usage$date), collapse = " to "),
        x = NULL,
        y = "n users that hold the security",
@@ -214,27 +237,46 @@ get_date_of_interest <- function(ticker, date, method = c("lead", "lag")) {
   }
 
 # merge back with posts_df
-final_df <- posts_df %>% 
+final_df <- final_df %>% 
   left_join(RH_usage, by = c("date", "ticker")) %>% 
   rowwise() %>% 
   mutate(users_holding_lead = get_date_of_interest(ticker, date, "lead"),
          users_holding_lag = get_date_of_interest(ticker, date, "lag")) %>% 
   ungroup()
 
-# throw out rows we don't have all user data on
-final_df <- na.omit(final_df)
-
 # calculate % change in users
 final_df$percent_change <- final_df$users_holding_lead / final_df$users_holding_lag - 1 
 
-# add boolean identifying before / after market peak
-final_df$post_peak <- final_df$date > as.Date('2020-02-19')
+# throw out rows we don't have all user data on
+final_df <- drop_na(final_df, c('users_holding', 'users_holding_lead', 'users_holding_lag', 'percent_change'))
+
+# remove outliers
+final_df <- final_df %>% 
+  filter(between(percent_change,
+                 quantile(final_df$percent_change, 0.01, na.rm = TRUE),
+                 quantile(final_df$percent_change, 0.99, na.rm = TRUE)))
+
+# save dataset
+write_csv(final_df, 'Analysis/cleaned_data.csv')
 
 
 # frequentist -------------------------------------------------------------
 
-# correlation between outcome and predictor
-cor(final_df$sentiment_score, final_df$percent_change)
+final_df$sentiment <- factor(final_df$sentiment, levels = c('none', 'low', 'high'))
+
+# fit a lm
+broom::tidy(lm(percent_change ~ sentiment + n_comments, data = final_df))
+
+# fit a fifth mlm where the effect of sentiment and n_comments varies differently based on sentiment 
+# we're allowing sentiment and n_comments to vary between the three sentiment groups
+mlm_freq_model <- lme4::lmer(percent_change ~ sentiment + n_comments + (1 | sentiment),
+                               REML = T, data = final_df)
+
+
+# frequentist 8/25 --------------------------------------------------------
+
+# add boolean identifying before / after market peak
+# final_df$post_peak <- final_df$date > as.Date('2020-02-19')
 
 # plot percent_change vs. sentiment_score
 final_df %>% 
@@ -244,7 +286,7 @@ final_df %>%
   scale_y_log10()
 
 # fit a lm
-broom::tidy(lm(percent_change ~ sentiment_score + n_comments + post_peak, data = final_df))
+broom::tidy(lm(percent_change ~ sentiment + n_comments + post_peak, data = final_df))
 
 # fit mlm with post_peak as a random effect
 mlm_freq_model <- lme4::lmer(percent_change ~ sentiment_score + n_comments + (1 | post_peak),

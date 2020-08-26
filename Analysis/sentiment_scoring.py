@@ -129,33 +129,40 @@ reddit.read_only = True
 # TODO: need to fix try except because it will return a multidimenional list
 post_scores = []
 for i in range(len(posts_df.id)):
+    submission = reddit.submission(id=posts_df.id[i])
     try:
-        submission = reddit.submission(id=posts_df.id[i])
         submission.comments.replace_more(limit=0)
-        comment_scores = []
-        comment_upvotes = []
-        for top_level_comment in submission.comments:
-            comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
-            comment_upvotes.append(top_level_comment.score)
-        if len(comment_scores) > 0:
-            weighted_score = (np.array(comment_scores) * np.array(comment_upvotes)).sum() / np.array(comment_upvotes).sum()
-            post_scores.append(weighted_score)
-        else:
-            post_scores.append(np.nan)
     except:
-        time.sleep(10)
-        submission = reddit.submission(id=posts_df.id[i])
-        submission.comments.replace_more(limit=0)
-        comment_scores = []
-        comment_upvotes = []
-        for top_level_comment in submission.comments:
-            comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
-            comment_upvotes.append(top_level_comment.score)
-        if len(comment_scores) > 0:
-            weighted_score = (np.array(comment_scores) * np.array(comment_upvotes)).sum() / np.array(comment_upvotes).sum()
-            post_scores.append(weighted_score)
-        else:
+        try:
+            time.sleep(30)
+            submission.comments.replace_more(limit=0)
+        except:
             post_scores.append(np.nan)
+            continue
+    comment_scores = []
+    comment_upvotes = []
+    for top_level_comment in submission.comments:
+        comment_scores.append(vader.polarity_scores(top_level_comment.body)["compound"])
+        comment_upvotes.append(top_level_comment.score)
+    if len(comment_scores) > 0:
+        # first scale comments b/t 0:1 because upvotes can be negative
+        comment_upvotes = np.array(comment_upvotes)
+        if np.all(comment_upvotes == 0):
+            # if there are no upvotes then just replace with 1s; otherwise it'll divide by 0 in calculating weighted_score
+            comment_upvotes_scaled = np.repeat(1, len(comment_upvotes))
+        else:
+            # make sure denominator is not 0
+            comment_range = max(comment_upvotes) - min(comment_upvotes)
+            if comment_range != 0:
+                comment_upvotes_scaled = (comment_upvotes - min(comment_upvotes)) / comment_range
+            else:
+                comment_upvotes_scaled = np.repeat(1, len(comment_upvotes))
+        # create a weighted sentiment score based on the number of upvotes
+        weighted_score = (np.array(comment_scores) * comment_upvotes_scaled).sum() / comment_upvotes_scaled.sum()
+        post_scores.append(weighted_score)
+    else:
+        post_scores.append(np.nan)
+
 
 # histogram of scores
 plt.figure(figsize=(9, 5))
