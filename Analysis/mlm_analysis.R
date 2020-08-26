@@ -28,7 +28,7 @@ posts_df %>%
   ggplot(aes(x = date, y = sentiment_score)) +
   geom_point(alpha = 0.6) +
   labs(title = "Sentiment scores over time",
-       caption = "2020-01-01 to 2020-04-10",
+       caption = paste0(range(posts_df$date), collapse = " to "),
        x = "Date",
        y = 'Sentiment score (VADER)')
 
@@ -39,7 +39,7 @@ posts_df %>%
   ggplot(aes(x = n_comments, y = sentiment_score)) +
   geom_point(alpha = 0.6) +
   labs(title = "Comments per post",
-       caption = "2020-01-01 to 2020-04-10",
+       caption = paste0(range(posts_df$date), collapse = " to "),
        x = "n comments per post",
        y = 'Sentiment score (VADER)')
 
@@ -55,7 +55,7 @@ tmp %>%
   ggplot(aes(x = sentiment_score, y = ticker, fill = ticker)) +
   geom_density_ridges(alpha = 0.9, color = 'grey40') +
   labs(title = "Distribution of sentiment scores of top 5% mentioned securities in r/wallstreetbets",
-       caption = "2020-01-01 to 2020-04-10",
+       caption = paste0(range(posts_df$date), collapse = " to "),
        x = "Sentiment score (VADER)",
        y = NULL) +
   theme(legend.position = 'none')
@@ -72,7 +72,7 @@ posts_df %>%
   ggplot(aes(x = n, y = reorder(ticker, n))) +
   geom_col() +
   labs(title = "Top 10% mentioned securities in r/wallstreetbets",
-       caption = "2020-01-01 to 2020-04-10",
+       caption = paste0(range(posts_df$date), collapse = " to "),
        x = "n posts",
        y = NULL)
 ggsave("Plots/top_mentions.png",
@@ -86,7 +86,7 @@ posts_df %>%
   ggplot(aes(x = n)) +
   geom_histogram(color = 'white') +
   labs(title = "Securities mentioned per post",
-       caption = "2020-01-01 to 2020-04-10",
+       caption = paste0(range(posts_df$date), collapse = " to "),
        x = "n companies per post",
        y = 'n')
 
@@ -95,7 +95,7 @@ posts_df %>%
   ggplot(aes(x = n_comments)) +
   geom_histogram(color = 'white') +
   labs(title = "Comments per post",
-       caption = "2020-01-01 to 2020-04-10",
+       caption = paste0(range(posts_df$date), collapse = " to "),
        x = "n comments per post",
        y = 'n')
 
