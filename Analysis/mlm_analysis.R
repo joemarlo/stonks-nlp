@@ -4,6 +4,7 @@ library(rstanarm)
 library(ggridges)
 options(mc.cores = parallel::detectCores())
 theme_set(theme_minimal())
+set.seed(44)
 
 setwd("~/Dropbox/Data/Projects/stonks-nlp/")
 
@@ -151,19 +152,20 @@ RH_usage %>%
   group_by(date) %>% 
   summarize(n = sum(users_holding)) %>% 
   ggplot(aes(x = date, y = n)) + 
-  geom_line() +
+  geom_line(color = 'grey10') +
+  geom_area(alpha = 0.8, fill = '#487861') +
   geom_vline(xintercept = as.Date('2020-02-19')) +
   annotate(geom = 'text', x = as.Date('2020-02-15'), y = 2.0e+7,
            label = "Market peak: 2/19", hjust = 1) +
   geom_vline(xintercept = as.Date('2020-03-20')) +
-  annotate(geom = 'text', x = as.Date('2020-03-26'), y = 5.0e+6,
-           label = "NY stay-at-home\norder: 3/20", hjust = 0) +
+  annotate(geom = 'text', x = as.Date('2020-03-26'), y = 5.0e+6, color = 'white',
+           label = "NY stay-at-\nhome order: \n3/20", hjust = 0) +
   geom_vline(xintercept = as.Date('2020-03-23')) +
-  annotate(geom = 'text', x = as.Date('2020-03-28'), y = 1.0e+7,
+  annotate(geom = 'text', x = as.Date('2020-03-28'), y = 1.3e+7, color = 'white',
            label = "Market\nbottom: 3/23", hjust = 0) +
   scale_y_continuous(labels = scales::comma_format()) +
   labs(title = "Total unique securities owned by Robinhood users",
-       subtitle = 'For the top ~700 securities',
+       subtitle = 'Data only includes the top ~700 securities',
        x = NULL,
        y = "n users that hold the security")
 ggsave("Plots/RH_usage.png",
@@ -175,7 +177,7 @@ ggsave("Plots/RH_usage.png",
 tmp <- RH_usage %>% 
   group_by(ticker) %>% 
   summarize(mean_user = mean(users_holding), .groups = 'drop') %>% 
-  slice_max(mean_user, prop = 0.05) %>%
+  slice_max(mean_user, n = 15) %>% 
   mutate(name = paste0(ticker, ": ", substr(as.character(mean_user), 1, 3), "k"))
 tmp %>% 
   select(ticker) %>% 
@@ -185,8 +187,7 @@ tmp %>%
   ggplot(aes(x = date, y = users_holding, color = name)) +
   geom_line(alpha = 0.5) +
   scale_y_continuous(labels = scales::comma_format()) +
-  labs(title = "Top 5% most frequently held securities",
-       subtitle = "Population of the top ~700 securities",
+  labs(title = "Top 15 most frequently held securities",
        caption = paste0(range(RH_usage$date), collapse = " to "),
        x = NULL,
        y = "n users that hold the security",
@@ -250,6 +251,12 @@ final_df$percent_change <- final_df$users_holding_lead / final_df$users_holding_
 # throw out rows we don't have all user data on
 final_df <- drop_na(final_df, c('users_holding', 'users_holding_lead', 'users_holding_lag', 'percent_change'))
 
+# record NA n_comments to 0 otherwise model will throw out these observations
+final_df$n_comments[is.na(final_df$n_comments)] <- 0
+
+# record sentiment as a factor
+final_df$sentiment <- factor(final_df$sentiment, levels = c('none', 'low', 'high'))
+
 # remove outliers
 final_df <- final_df %>% 
   filter(between(percent_change,
@@ -262,16 +269,19 @@ write_csv(final_df, 'Analysis/cleaned_data.csv')
 
 # frequentist -------------------------------------------------------------
 
-final_df$sentiment <- factor(final_df$sentiment, levels = c('none', 'low', 'high'))
-
 # fit a lm
 broom::tidy(lm(percent_change ~ sentiment + n_comments, data = final_df))
 
 # fit a fifth mlm where the effect of sentiment and n_comments varies differently based on sentiment 
 # we're allowing sentiment and n_comments to vary between the three sentiment groups
-mlm_freq_model <- lme4::lmer(percent_change ~ sentiment + n_comments + (1 | sentiment),
+mlm_freq_model <- lme4::lmer(percent_change ~ n_comments + (1 | sentiment),
                                REML = T, data = final_df)
 
+# test if mlm model grouping on sentiment is necessary
+lmerTest::rand(mlm_freq_model) # results indicate mlm is necessary
+
+# random effects
+ranef(mlm_freq_model)
 
 # frequentist 8/25 --------------------------------------------------------
 
@@ -345,4 +355,8 @@ confint(mlm_freq_model) %>%
 
 # bayesian ----------------------------------------------------------------
 
-
+# fit the bayesian mlm using default priors
+mlm_bayes_model <- stan_lmer(formula = percent_change ~ n_comments + (1 | sentiment), 
+                         data = final_df, seed = 44)
+pairs(mlm_bayes_model)
+summary(mlm_bayes_model, digits = 3)
