@@ -69,10 +69,10 @@ ggsave("Plots/scores_by_top_mentions.png",
 # counts of tickers
 posts_df %>% 
   count(ticker) %>% 
-  slice_max(n, prop = 0.1) %>%
+  slice_max(n, prop = 0.05) %>%
   ggplot(aes(x = n, y = reorder(ticker, n))) +
   geom_col() +
-  labs(title = "Top 10% mentioned securities in r/wallstreetbets",
+  labs(title = "Top 5% mentioned securities in r/wallstreetbets",
        caption = paste0(range(posts_df$date), collapse = " to "),
        x = "n posts",
        y = NULL)

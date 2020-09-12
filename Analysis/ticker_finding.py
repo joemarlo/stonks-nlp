@@ -171,9 +171,5 @@ posts_df['all_found_companies'] = posts_df['all_found_companies'].apply(lambda r
 final_df = posts_df[posts_df.all_found_companies != '']
 final_df = final_df[["id", "url", "comms_num", "date", "sentiment_score", "all_found_companies"]]
 
-# add rows of tickers of the rows that are not in here
-# sample should be same size as rows in WSB and we should sample the dates from WSB posts
-
-
 # write out dataframe
 final_df.to_csv("Analysis/scored_named_posts.csv", index=False)

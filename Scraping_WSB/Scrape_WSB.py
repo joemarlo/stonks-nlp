@@ -19,8 +19,8 @@ reddit.read_only = True
 api = PushshiftAPI(reddit)
 
 # set range of dates to scrape
-start_day = dt.datetime(2020, 4, 15)
-date_list = [start_day + dt.timedelta(days=x) for x in range(30)]
+start_day = dt.datetime(2020, 3, 1)
+date_list = [start_day + dt.timedelta(days=x) for x in range(92)]
 
 # create empty list to hold submission ids
 all_ids = list()
@@ -78,7 +78,7 @@ for submission in DD_ids:
 # convert dict to dataframe
 items_df = pd.DataFrame(items_dict)
 
-# define functino to get the date form the timestamp
+# define function to get the date form the timestamp
 def get_date(created):
     return dt.datetime.fromtimestamp(created)
 
