@@ -126,7 +126,6 @@ reddit = praw.Reddit(...)
 reddit.read_only = True
 
 # get the mean sentiment score for all of the top-level comments per post
-# TODO: need to fix try except because it will return a multidimenional list
 post_scores = []
 for i in range(len(posts_df.id)):
     submission = reddit.submission(id=posts_df.id[i])
