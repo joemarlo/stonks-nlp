@@ -2,7 +2,7 @@
 
 Examining the link between [r/wallstreetbets](https://www.reddit.com/r/wallstreetbets/) commentary and [Robinhood](https://robinhood.com/us/en/) usage using [Bayesian multi-level modeling](https://bookdown.org/ajkurz/Statistical_Rethinking_recoded/multilevel-models.html).
 
-[Working doc](https://docs.google.com/document/d/1gxtnKA8kYnErLlQG9D1arkF0PyiTmxI0CQyOZFLH4Tw/edit?ts=5f38399a)
+See blog post: [marlo.works/posts/stonks/](https://joemarlo.github.io/posts/stonks/)
 
 ## Sentiment scores
 
@@ -28,4 +28,3 @@ Examining the link between [r/wallstreetbets](https://www.reddit.com/r/wallstree
 <p align="center">
   <img src="Plots/RH_usage_top_tickers.png" width=79%>
 </p>
-
