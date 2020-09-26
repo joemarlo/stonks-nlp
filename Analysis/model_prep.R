@@ -5,6 +5,7 @@ theme_set(theme_minimal())
 set.seed(44)
 
 setwd("~/stonks-nlp/")
+setwd("~/Dropbox/Data/Projects/stonks-nlp/")
 
 # read the data containing the posts, scores, and tickers
 posts_df <- read_csv("Analysis/scored_named_posts.csv", 
@@ -19,28 +20,6 @@ posts_df <- posts_df %>%
 
 
 # EDA ---------------------------------------------------------------------
-
-# sentiment scores over time
-posts_df %>% 
-  select(-ticker) %>% 
-  distinct() %>% 
-  ggplot(aes(x = date, y = sentiment_score)) +
-  geom_point(alpha = 0.6) +
-  labs(title = "Sentiment scores over time",
-       caption = paste0(range(posts_df$date), collapse = " to "),
-       x = "Date",
-       y = 'Sentiment score (VADER)')
-
-# sentiment scores by number of comments
-posts_df %>% 
-  select(-ticker) %>% 
-  distinct() %>% 
-  ggplot(aes(x = n_comments, y = sentiment_score)) +
-  geom_point(alpha = 0.6) +
-  labs(title = "Comments per post",
-       caption = paste0(range(posts_df$date), collapse = " to "),
-       x = "n comments per post",
-       y = 'Sentiment score (VADER)')
 
 # plot the distributions of the top tickers 
 tmp <- posts_df %>% 
@@ -63,40 +42,6 @@ ggsave("Plots/scores_by_top_mentions.png",
        width = 20,
        height = 16,
        units = 'cm')
-
-# counts of tickers
-posts_df %>% 
-  count(ticker) %>% 
-  slice_max(n, prop = 0.05) %>%
-  ggplot(aes(x = n, y = reorder(ticker, n))) +
-  geom_col() +
-  labs(title = "Top 5% mentioned securities in r/wallstreetbets",
-       caption = paste0(range(posts_df$date), collapse = " to "),
-       x = "n posts",
-       y = NULL)
-ggsave("Plots/top_mentions.png",
-       width = 20,
-       height = 16,
-       units = 'cm')
-
-# n tickers per post
-posts_df %>% 
-  count(post_id) %>% 
-  ggplot(aes(x = n)) +
-  geom_histogram(color = 'white') +
-  labs(title = "Securities mentioned per post",
-       caption = paste0(range(posts_df$date), collapse = " to "),
-       x = "n companies per post",
-       y = 'n')
-
-# n comments per post
-posts_df %>% 
-  ggplot(aes(x = n_comments)) +
-  geom_histogram(color = 'white') +
-  labs(title = "Comments per post",
-       caption = paste0(range(posts_df$date), collapse = " to "),
-       x = "n comments per post",
-       y = 'n')
 
 
 # add in sample of tickers that were not found ----------------------------
@@ -147,7 +92,7 @@ RH_usage %>%
   summarize(n = sum(users_holding)) %>% 
   ggplot(aes(x = date, y = n)) + 
   geom_line(color = 'grey10') +
-  geom_area(alpha = 0.8, fill = '#487861') +
+  geom_area(alpha = 0.8, fill = 'grey40') + #'#487861') +
   geom_vline(xintercept = as.Date('2020-02-19')) +
   annotate(geom = 'text', x = as.Date('2020-02-15'), y = 2.0e+7,
            label = "Market peak: 2/19", hjust = 1) +
@@ -167,30 +112,6 @@ ggsave("Plots/RH_usage.png",
        height = 12,
        units = 'cm')
 
-# RH usage over time by ticker
-tmp <- RH_usage %>% 
-  group_by(ticker) %>% 
-  summarize(mean_user = mean(users_holding), .groups = 'drop') %>% 
-  slice_max(mean_user, n = 15) %>% 
-  mutate(name = paste0(ticker, ": ", substr(as.character(mean_user), 1, 3), "k"))
-tmp %>% 
-  select(ticker) %>% 
-  semi_join(RH_usage, .) %>%
-  left_join(tmp %>% select(ticker, name), by = 'ticker') %>% 
-  mutate(name = factor(name, levels = tmp$name)) %>% 
-  ggplot(aes(x = date, y = users_holding, color = name)) +
-  geom_line(alpha = 0.5) +
-  scale_y_continuous(labels = scales::comma_format()) +
-  labs(title = "Top 15 most frequently held securities",
-       caption = paste0(range(RH_usage$date), collapse = " to "),
-       x = NULL,
-       y = "n users that hold the security",
-       color = 'Ticker: mean users')
-rm(tmp)
-ggsave("Plots/RH_usage_top_tickers.png",
-       width = 20,
-       height = 12,
-       units = 'cm')
 
 # identify wsb status
 final_df <- final_df %>% mutate(wsb = 1)
@@ -211,6 +132,4 @@ final_df <- final_df %>% mutate(wsb = if_else(is.na(wsb), 0, 1))
 final_df <- final_df %>% filter(day != "Sunday", day != "Saturday")
 
 # save dataset
-
-
 write_csv(final_df, 'Analysis/cleaned_data.csv')
