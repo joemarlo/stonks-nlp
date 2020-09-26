@@ -102,11 +102,11 @@ RH_usage %>%
   geom_vline(xintercept = as.Date('2020-03-23')) +
   annotate(geom = 'text', x = as.Date('2020-03-28'), y = 1.3e+7, color = 'white',
            label = "Market\nbottom: 3/23", hjust = 0) +
-  scale_y_continuous(labels = scales::comma_format()) +
+  scale_y_continuous(labels = scales::label_number(scale = 1 / 1e6, suffix = "M")) +
   labs(title = "Total unique securities owned by Robinhood users",
        subtitle = 'Data only includes the top ~700 securities',
        x = NULL,
-       y = "n users that hold the security")
+       y = NULL)
 ggsave("Plots/RH_usage.png",
        width = 20,
        height = 12,
